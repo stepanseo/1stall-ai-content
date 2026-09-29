@@ -1,0 +1,30 @@
+# === ГЛАВНОЕ: секреты GUI-клиента ===
+# В этом файле логин/пароль от SSH и ключ router.cheap API (см. gui/ai_desc_gui_1stall.py,
+# функция save_config). Он создаётся автоматически рядом с .py при первом сохранении
+# настроек в программе — никогда не коммить его.
+config.json
+gui/config.json
+
+# Отчёты о генерации — рантайм-данные сервера, не код. У каждого раздела/страницы
+# свой файл, их не нужно версионировать (и они могут быть большими).
+ai_desc_report_section_*.json
+ai_ocfilter_report_batch_*.json
+server/ai_desc_report_section_*.json
+
+# Маппинг "раздел -> файл промпта", который сохраняется из GUI на сервере (prompts/mapping.json
+# или аналогично) — тоже рантайм-состояние, а не исходный код. Если хотите версионировать
+# маппинг как часть репозитория — удалите эту строку.
+prompts/**/mapping.json
+prompts/mapping.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# ОС/редакторы
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
