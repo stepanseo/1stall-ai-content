@@ -161,25 +161,33 @@ class App:
 
         ttk.Label(conn_frame, text="Хост:").grid(row=0, column=0, sticky="e", padx=4, pady=4)
         self.host_var = tk.StringVar(value=self.cfg["host"])
-        ttk.Entry(conn_frame, textvariable=self.host_var, width=25).grid(row=0, column=1, padx=4, pady=4)
+        host_entry = ttk.Entry(conn_frame, textvariable=self.host_var, width=25)
+        host_entry.grid(row=0, column=1, padx=4, pady=4)
+        self._add_copy_paste_menu(host_entry)
 
         ttk.Label(conn_frame, text="Порт:").grid(row=0, column=2, sticky="e", padx=4, pady=4)
         self.port_var = tk.StringVar(value=str(self.cfg["port"]))
-        ttk.Entry(conn_frame, textvariable=self.port_var, width=6).grid(row=0, column=3, padx=4, pady=4)
+        port_entry = ttk.Entry(conn_frame, textvariable=self.port_var, width=6)
+        port_entry.grid(row=0, column=3, padx=4, pady=4)
+        self._add_copy_paste_menu(port_entry)
 
         ttk.Label(conn_frame, text="Логин:").grid(row=1, column=0, sticky="e", padx=4, pady=4)
         self.user_var = tk.StringVar(value=self.cfg["username"])
-        ttk.Entry(conn_frame, textvariable=self.user_var, width=25).grid(row=1, column=1, padx=4, pady=4)
+        user_entry = ttk.Entry(conn_frame, textvariable=self.user_var, width=25)
+        user_entry.grid(row=1, column=1, padx=4, pady=4)
+        self._add_copy_paste_menu(user_entry)
 
         ttk.Label(conn_frame, text="Пароль:").grid(row=1, column=2, sticky="e", padx=4, pady=4)
         self.pass_var = tk.StringVar(value=self.cfg["password"])
-        ttk.Entry(conn_frame, textvariable=self.pass_var, width=20, show="*").grid(row=1, column=3, padx=4, pady=4)
+        pass_entry = ttk.Entry(conn_frame, textvariable=self.pass_var, width=20, show="*")
+        pass_entry.grid(row=1, column=3, padx=4, pady=4)
+        self._add_copy_paste_menu(pass_entry)
 
         ttk.Label(conn_frame, text="Путь к скрипту на сервере:").grid(row=2, column=0, sticky="e", padx=4, pady=4)
         self.path_var = tk.StringVar(value=self.cfg["remote_path"])
-        ttk.Entry(conn_frame, textvariable=self.path_var, width=55).grid(
-            row=2, column=1, columnspan=3, sticky="w", padx=4, pady=4
-        )
+        path_entry = ttk.Entry(conn_frame, textvariable=self.path_var, width=55)
+        path_entry.grid(row=2, column=1, columnspan=3, sticky="w", padx=4, pady=4)
+        self._add_copy_paste_menu(path_entry)
 
         ttk.Label(conn_frame, text="Ключ API (router.cheap, sk-...):").grid(row=3, column=0, sticky="e", padx=4, pady=4)
         self.api_key_var = tk.StringVar(value=self.cfg["router_cheap_api_key"])
@@ -200,7 +208,9 @@ class App:
 
         ttk.Label(conn_frame, text="Модель:").grid(row=4, column=0, sticky="e", padx=4, pady=4)
         self.model_var = tk.StringVar(value=self.cfg["router_cheap_model"])
-        ttk.Entry(conn_frame, textvariable=self.model_var, width=25).grid(row=4, column=1, sticky="w", padx=4, pady=4)
+        model_entry = ttk.Entry(conn_frame, textvariable=self.model_var, width=25)
+        model_entry.grid(row=4, column=1, sticky="w", padx=4, pady=4)
+        self._add_copy_paste_menu(model_entry)
 
         ttk.Button(conn_frame, text="Сохранить настройки подключения", command=self._save_settings).grid(
             row=5, column=0, columnspan=4, pady=6
@@ -653,6 +663,11 @@ class App:
 
     @staticmethod
     def _add_copy_paste_menu(entry):
+        """Контекстное меню правой кнопкой + Ctrl+A/C/V/X по физическому коду
+        клавиши (65=A, 67=C, 86=V, 88=X) - не зависит от раскладки клавиатуры,
+        та же защита, что и в setup_text_editing_shortcuts() для текстовых
+        полей, только адаптированная под ttk.Entry (у Entry нет tag_add -
+        выделение делается через select_range)."""
         menu = tk.Menu(entry, tearoff=0)
         menu.add_command(label="Вырезать", command=lambda: entry.event_generate("<<Cut>>"))
         menu.add_command(label="Копировать", command=lambda: entry.event_generate("<<Copy>>"))
@@ -667,6 +682,23 @@ class App:
                 menu.grab_release()
 
         entry.bind("<Button-3>", show_menu)
+
+        def on_key(event):
+            if event.state & 0x4:
+                if event.keycode == 65:
+                    entry.select_range(0, "end")
+                    return "break"
+                if event.keycode == 67:
+                    entry.event_generate("<<Copy>>")
+                    return "break"
+                if event.keycode == 86:
+                    entry.event_generate("<<Paste>>")
+                    return "break"
+                if event.keycode == 88:
+                    entry.event_generate("<<Cut>>")
+                    return "break"
+
+        entry.bind("<Key>", on_key)
         return entry
 
     # ---------------------------------------------------------- Проверка баланса router.cheap
