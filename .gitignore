@@ -28,3 +28,15 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# реальные имена рантайм/временных файлов на сервере 1stall.ru
+ai_desc_smartfilter_report_section_*.json
+gui_run_*.pid
+gui_run_*.log
+prompt_payload.json
+prompt_payload_stream.json
+prompt_test_temp.txt
+review_log.txt
+smartfilter_urls_input.txt
+prompts/section_mapping.json
+prompts/smartfilter/section_mapping.json
