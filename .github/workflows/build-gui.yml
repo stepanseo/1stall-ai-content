@@ -1,0 +1,44 @@
+name: Build Windows EXE (1stall GUI)
+
+# Запускается автоматически при пуше в main, если изменились файлы в gui/,
+# а также вручную через вкладку Actions -> Build Windows EXE -> Run workflow.
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'gui/**'
+      - '.github/workflows/build-gui.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # нужно, чтобы workflow мог опубликовать Release с exe
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install paramiko pyinstaller
+
+      - name: Build EXE
+        run: pyinstaller --onefile --noconsole --name "1stall_generator" gui/ai_desc_gui_1stall.py
+
+      # Публикуем exe в постоянный Release с фиксированным тегом -
+      # при каждой новой сборке файл в этом Release просто обновляется,
+      # так что ссылка на скачивание всегда одна и та же.
+      - name: Publish build as GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-gui-build
+          name: "1stall GUI - последняя сборка"
+          body: "Автосборка из коммита ${{ github.sha }}. Скачайте 1stall_generator.exe в Assets ниже."
+          files: dist/1stall_generator.exe
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
