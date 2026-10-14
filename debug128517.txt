@@ -1,0 +1,132 @@
+=== GetFields() (ключевые поля) ===
+ID: 128517
+IBLOCK_ID: 38
+NAME: Балка двутавровая 12 Б 3ПС/СП
+IBLOCK_SECTION_ID: 268
+ACTIVE: Y
+
+=== GetProperties() — все свойства как есть ===
+  [CUT] NAME="Сечение" VALUE=''
+  [WEIGHT] NAME="Ширина полок, мм " VALUE=''
+  [LONG] NAME="Длина" VALUE='12 м'
+  [HEIGHT] NAME="Высота, мм" VALUE=''
+  [THICNESS] NAME="Стенка, мм" VALUE=''
+  [STANDARD_SIZE] NAME="Типоразмер" VALUE='12Б'
+  [THICKNESS] NAME="Толщина, мм" VALUE=''
+  [WIDTH] NAME="Ширина, мм" VALUE=''
+  [ALLOY] NAME="Сплав / Марка стали" VALUE='3ПС/СП'
+  [GOST] NAME="ГОСТ, ТУ" VALUE=''
+  [SHOW_ON_INDEX_PAGE] NAME="Отображать в слайдере на главной" VALUE='Да'
+  [STATUS] NAME="Наличие" VALUE='В наличии'
+  [LINK_SKU] NAME="Торговые предложения" VALUE=false
+  [LINK_REGION] NAME="Регион" VALUE=false
+  [BLOG_POST_ID] NAME="ID поста блога для комментариев" VALUE=''
+  [BLOG_COMMENTS_CNT] NAME="Количество комментариев" VALUE=''
+  [POPUP_VIDEO] NAME="Видео в попапе" VALUE=''
+  [FORM_QUESTION] NAME="Задать вопрос" VALUE='Y'
+  [PRICE] NAME="Цена в карточке" VALUE='86990 #CURRENCY#/тн'
+  [ARTICLE] NAME="Артикул" VALUE=''
+  [FORM_ORDER] NAME="Заказать товар" VALUE='Y'
+  [PRICE_CURRENCY] NAME="Валюта" VALUE='руб.'
+  [PRICEOLD] NAME="Старая цена" VALUE=''
+  [ECONOMY] NAME="Экономия" VALUE=''
+  [FILTER_PRICE] NAME="Цена" VALUE='86990'
+  [BNR_TOP_UNDER_HEADER] NAME="С наездом на шапку" VALUE=''
+  [BNR_TOP] NAME="Баннер сверху" VALUE=''
+  [BNR_TOP_IMG] NAME="Активная картинка" VALUE=''
+  [BNR_TOP_BG] NAME="Фоновая картинка" VALUE=''
+  [BNR_TOP_COLOR] NAME="Цвет шапки и текста" VALUE='светлый'
+  [BUTTON1TEXT] NAME="Кнопка 1 текст" VALUE=''
+  [BUTTON1LINK] NAME="Кнопка 1 ссылка" VALUE=''
+  [BUTTON1TARGET] NAME="Кнопка 1 цель" VALUE=''
+  [BUTTON1CLASS] NAME="Кнопка 1 класс" VALUE=''
+  [BUTTON1COLOR] NAME="Кнопка 1 цвет" VALUE=''
+  [BUTTON1ATTR] NAME="Кнопка 1 атрибуты" VALUE=''
+  [BUTTON2TEXT] NAME="Кнопка 2 текст" VALUE=''
+  [BUTTON2LINK] NAME="Кнопка 2 ссылка" VALUE=''
+  [BUTTON2TARGET] NAME="Кнопка 2 цель" VALUE=''
+  [BUTTON2CLASS] NAME="Кнопка 2 класс" VALUE=''
+  [BUTTON2COLOR] NAME="Кнопка 2 цвет" VALUE=''
+  [BUTTON2ATTR] NAME="Кнопка 2 атрибуты" VALUE=''
+  [HIT] NAME="Хит продаж" VALUE=false
+  [VIDEO] NAME="Файл видео" VALUE=false
+  [INCLUDE_TEXT] NAME="Примечание-подсказка" VALUE=''
+  [DATE_COUNTER] NAME="Дата для счетчика" VALUE=''
+  [VIDEO_IFRAME] NAME="Код с видео (iframe)" VALUE=false
+  [DOCUMENTS] NAME="Документы" VALUE=false
+  [PHOTOS] NAME="Галерея" VALUE=false
+  [GALLEY_BIG] NAME="Галерея большая" VALUE=false
+  [BEST_ITEM] NAME="Товар дня" VALUE=''
+  [LINK_PARTNERS] NAME="Партнеры" VALUE=false
+  [LINK_STAFF] NAME="Сотрудники" VALUE=false
+  [LINK_ARTICLES] NAME="Статьи" VALUE=false
+  [LINK_STUDY] NAME="Курсы" VALUE=false
+  [BRAND] NAME="Производитель" VALUE=''
+  [LINK_TIZERS] NAME="Тизеры" VALUE=false
+  [LINK_VACANCY] NAME="Вакансии" VALUE=false
+  [LINK_REVIEWS] NAME="Отзывы" VALUE=false
+  [LINK_NEWS] NAME="Новости" VALUE=false
+  [LINK_SERVICES] NAME="Услуги" VALUE=false
+  [LINK_FAQ] NAME="FAQ" VALUE=false
+  [LINK_SALE] NAME="Акции" VALUE=false
+  [LINK_GOODS_FILTER] NAME="Связанные товары по фильтру" VALUE=''
+  [LINK_GOODS] NAME="Товары" VALUE=false
+  [LINK_COMPLECT] NAME="Комплекты" VALUE=false
+  [SALE_TEXT] NAME="Текст с акцией" VALUE=''
+  [PRINT_NAME] NAME="Наименование для документов" VALUE=''
+  [PRESSURE] NAME="Давление" VALUE=''
+  [INNER_DIAMETER] NAME="Диаметр внутренний, мм" VALUE=''
+  [DU] NAME="ДУ" VALUE=''
+  [ALLOY_CATEGORY] NAME="Категория сплава" VALUE=''
+  [SURFACE] NAME="Поверхность" VALUE=false
+  [MANUFACTURER] NAME="Производитель" VALUE=''
+  [SIZE2] NAME="Размер 2" VALUE=''
+  [SIZE3] NAME="Размер 3" VALUE=''
+  [SIZE4] NAME="Размер 4" VALUE=''
+  [CORRUGATION] NAME="Рифление" VALUE=''
+  [WALL] NAME="Стенка, мм" VALUE=''
+  [VALVE_TYPE] NAME="Тип арматуры" VALUE=''
+  [BEAM_TYPE] NAME="Тип балки" VALUE='Б'
+  [SHEET_TYPE] NAME="Тип листа" VALUE=''
+  [PACKAGE_TYPE] NAME="Тип паковки" VALUE=''
+  [TYPE_OF_SHEETING] NAME="Тип профнастила" VALUE=''
+  [MESH_TYPE] NAME="Тип сетки" VALUE=''
+  [PIPE_TYPE] NAME="Тип трубы" VALUE=false
+  [FLANGE_TYPE] NAME="Тип фланца" VALUE=''
+  [CHANNEL_TYPE] NAME="Тип швеллера" VALUE=''
+  [COLOR] NAME="Цвет" VALUE=''
+  [PARAMS] NAME="Характеристики" VALUE='12 м'
+  [KATEGORIYA] NAME="Категория" VALUE='Балка двутавровая'
+  [TOCHN] NAME="Точность" VALUE=''
+  [710] NAME="id_parsing" VALUE=''
+  [ALLOY_TYPE] NAME="Тип сплава" VALUE=false
+  [718] NAME="key_parsing" VALUE=''
+  [CLASS_TOCHN] NAME="Класс точности" VALUE=''
+  [MANUFACTUR_TECH] NAME="Технология изготовления" VALUE=''
+  [CONNECT_TYPE] NAME="Тип соединения" VALUE=''
+  [COATING] NAME="Покрытие" VALUE=''
+  [CLASS_STRENGTH] NAME="Класс прочности" VALUE=''
+  [THREAD_TYPE] NAME="Тип резьбы" VALUE=''
+  [MARKING] NAME="Маркировка" VALUE=''
+  [EdIzmerenia] NAME="Ед. Измерения" VALUE=''
+  [SposobIzgotovlenia] NAME="Способ изготовления" VALUE=''
+  [DESIGN_VERSION] NAME="Исполнение" VALUE=''
+  [TYPE] NAME="Тип" VALUE=''
+  [dopuskrast] NAME="Допустимая растягивающая нагрузка, кН" VALUE=''
+  [DIAM_REZBA] NAME="Диаметр резьбы" VALUE=''
+  [EDITION_1C] NAME="Подходящие редакции 1С-Битрикс" VALUE=false
+  [DEMO_URL] NAME="Адрес демонстрационного сайта" VALUE=''
+  [DIAMETER] NAME="Диаметр, мм" VALUE=''
+  [SIZE1] NAME="Размер, мм" VALUE='12'
+  [SPLAV] NAME="Сплав " VALUE=''
+  [AREA] NAME="Раскрой (ширина х длина), мм" VALUE=''
+  [STEEL] NAME="Марка стали " VALUE=false
+  [ISSUE_FORM] NAME="Форма выпуска " VALUE=false
+  [COUNTRY] NAME="Страна " VALUE=''
+  [STATE] NAME="Состояние" VALUE=''
+  [FACTORY] NAME="Завод производитель " VALUE=''
+  [CLASS] NAME="Класс арматуры " VALUE=''
+  [TECHNICAL_SPECIFICATIONS] NAME="Технические параметры" VALUE=''
+
+=== Попытка через СКУ (торговые предложения), если это оффер ===
+Модуль catalog недоступен или CCatalogSKU не найден.

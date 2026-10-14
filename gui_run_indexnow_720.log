@@ -1,0 +1,8 @@
+[debug] Ядро Битрикса загружено
+[debug] Модуль iblock подключён
+Файл-подтверждение IndexNow: /home/web/1stall.ru/www/f04e68d0e38cc17ebafe6ea66377e523.txt
+Собираю URL для 22 товаров...
+Отправляю 22 URL в IndexNow...
+Пакет из 22 URL — HTTP 202
+
+Готово. Код 200 или 202 — успешно принято сервисом IndexNow.

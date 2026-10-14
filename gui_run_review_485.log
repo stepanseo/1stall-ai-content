@@ -1,0 +1,16 @@
+[debug] Ядро Битрикса загружено
+[debug] Модуль iblock подключён
+[debug] Начинаю GetList по разделу 485, IBLOCK_ID=38
+[debug] GetList вызван, начинаю Fetch()
+[debug] Fetch завершён, всего строк: 29, отобрано ID: 29
+Всего товаров в разделе: 29
+Будет обработано в этом запуске: 29
+Используется файл промпта: prompts/list_konstruk_legirovahy.txt
+
+Найден предыдущий отчёт: 29 товаров уже успешно сгенерированы, пропускаю их.
+
+
+Готово. Отчёт сохранён: /home/web/1stall.ru/www/local/scripts/ai_desc_report_section_485.json
+Тексты сразу помечены как "approved". Проверь их (preview или сам файл) перед apply.
+Если какой-то текст не устроил — смени его "status" на "error", чтобы apply его пропустил.
+Затем запусти: php ai_generate_descriptions.php apply 485
