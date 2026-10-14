@@ -1,9 +1,0 @@
-[debug] Ядро Битрикса загружено
-[debug] Модуль iblock подключён
-ID 910117: описание обновлено.
-ID 910118: описание обновлено.
-ID 910119: описание обновлено.
-
-Готово. Не забудь очистить кэш:
-  rm -rf /home/web/1stall.ru/www/bitrix/cache/*
-  rm -rf /home/web/1stall.ru/www/bitrix/managed_cache/*

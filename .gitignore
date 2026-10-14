@@ -1,0 +1,34 @@
+# Отчёты о генерации (товары и SEO-страницы умного фильтра) — рантайм-данные,
+# растут и меняются на сервере постоянно
+ai_desc_report_section_*.json
+ai_desc_smartfilter_report_section_*.json
+
+# Логи и pid фоновых запусков через GUI
+gui_run_*.log
+gui_run_*.pid
+
+# Временные/служебные файлы промпт-редактора и тестов
+prompt_payload.json
+prompt_payload_stream.json
+prompt_test_temp.txt
+review_log.txt
+test_xl.json
+catalogaudit.txt
+debug128517.txt
+
+# Список ссылок для партии умного фильтра — вводится через GUI каждый раз
+smartfilter_urls_input.txt
+
+# Привязки промптов к ID разделов — состояние, меняется через GUI,
+# не редактируется руками через гит
+prompts/section_mapping.json
+prompts/smartfilter/section_mapping.json
+
+# Конфиг с логином/паролем (если когда-нибудь окажется рядом со скриптом)
+config.json
+
+# ОС/редакторы
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
