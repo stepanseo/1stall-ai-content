@@ -2791,6 +2791,69 @@ switch ($mode) {
         }
         break;
 
+    case "liststatssmartfilter":
+        // Сводка по ВСЕМ разделам умного фильтра, с которыми вообще велась
+        // работа — сканирует все файлы ai_desc_smartfilter_report_section_*.json
+        // в папке скрипта (а не только текущий "ID раздела" из формы) и для
+        // каждого раздела считает, сколько SEO-страниц готово (approved —
+        // текст сгенерирован, но ещё не записан в Битрикс) и сколько уже
+        // реально добавлено (applied — записано в Битрикс). Название раздела
+        // подтягивается из Битрикса, как в listreadyids.
+        $statsFiles = glob(__DIR__ . "/ai_desc_smartfilter_report_section_*.json");
+        $statsBySection = []; // sectionId => [approved, applied, total]
+        foreach ($statsFiles as $statsFilePath) {
+            if (!preg_match('/ai_desc_smartfilter_report_section_(\d+)\.json$/', $statsFilePath, $m)) {
+                continue;
+            }
+            $statsSectionId = (int)$m[1];
+            $statsReport = json_decode(file_get_contents($statsFilePath), true);
+            if (!is_array($statsReport) || empty($statsReport)) {
+                continue;
+            }
+            $approvedCount = 0;
+            $appliedCount = 0;
+            foreach ($statsReport as $statsItem) {
+                $statsStatus = $statsItem["status"] ?? "";
+                if ($statsStatus === "applied") {
+                    $appliedCount++;
+                } elseif ($statsStatus === "approved") {
+                    $approvedCount++;
+                }
+            }
+            if ($approvedCount === 0 && $appliedCount === 0) {
+                continue;
+            }
+            $statsBySection[$statsSectionId] = [
+                "approved" => $approvedCount,
+                "applied" => $appliedCount,
+                "total" => count($statsReport),
+            ];
+        }
+        ksort($statsBySection, SORT_NUMERIC);
+        $statsTotalApplied = 0;
+        $statsTotalApproved = 0;
+        foreach ($statsBySection as $statsRow) {
+            $statsTotalApplied += $statsRow["applied"];
+            $statsTotalApproved += $statsRow["approved"];
+        }
+        echo "Разделов, по которым велась работа — " . count($statsBySection)
+            . "; добавлено на сайт страниц — {$statsTotalApplied}"
+            . ($statsTotalApproved > 0 ? "; готово, но не применено — {$statsTotalApproved}" : "")
+            . "\n";
+        foreach ($statsBySection as $statsSectionId => $statsRow) {
+            $statsSectionRow = CIBlockSection::GetByID($statsSectionId)->Fetch();
+            $statsSectionName = $statsSectionRow["NAME"] ?? "";
+            $statsLine = $statsSectionName !== ""
+                ? "{$statsSectionId} - {$statsSectionName}"
+                : "{$statsSectionId}";
+            $statsLine .= ": добавлено — {$statsRow['applied']}";
+            if ($statsRow["approved"] > 0) {
+                $statsLine .= ", готово, но не применено — {$statsRow['approved']}";
+            }
+            echo $statsLine . "\n";
+        }
+        break;
+
     case "rawapicall":
         // Отправляет содержимое файла в API как есть, без подстановки
         // каких-либо плейсхолдеров и без привязки к товару/базе. Используется
