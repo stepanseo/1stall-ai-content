@@ -1076,96 +1076,59 @@ function callClaudeAPIAttempt($prompt, $url = ROUTER_CHEAP_URL_RESERVE)
         ],
     ], JSON_UNESCAPED_UNICODE);
 
-    // Стриминг обязателен: без него шлюз router.cheap буферизует весь
-    // ответ и виснет на генерациях, требующих заметного времени (короткие
-    // "OK"-ответы проходят и без стриминга — проблема именно в ожидании).
-    $accumulatedText = "";
-    $sseBuffer = "";
-    $streamError = "";
-    // Сырое тело ответа копим отдельно от SSE-парсинга: при 401/403/429 и
-    // подобных ошибках шлюз обычно отдаёт обычный JSON (не data:-события),
-    // и без этой копии мы видим только код 403 без текста причины.
-    $rawBody = "";
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_HTTPHEADER => [
-            "Content-Type: application/json",
-            "x-api-key: " . ROUTER_CHEAP_API_KEY,
-            "anthropic-version: 2023-06-01",
-            "Accept: text/event-stream",
-        ],
-        CURLOPT_USERAGENT => "curl/7.88.1",
-        CURLOPT_TIMEOUT => 180,
-        CURLOPT_CONNECTTIMEOUT => 15,
-        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-        // Ключевая часть: обрабатываем ответ по мере поступления чанков,
-        // а не ждём его целиком (CURLOPT_RETURNTRANSFER здесь не используем).
-        CURLOPT_WRITEFUNCTION => function ($curlHandle, $chunk) use (&$accumulatedText, &$streamError, &$sseBuffer, &$rawBody) {
-            // Сетевые чанки могут обрываться посреди строки SSE-события —
-            // без буферизации между вызовами куски JSON теряются/ломаются.
-            // Поэтому копим незавершённый хвост в $sseBuffer и обрабатываем
-            // только полные строки, оканчивающиеся на \n.
-            if (strlen($rawBody) < 2000) {
-                $rawBody .= $chunk; // ограничиваем, тело ошибки короткое, стрим текста - нет
-            }
-            $sseBuffer .= $chunk;
-
-            $lastNewlinePos = strrpos($sseBuffer, "\n");
-            if ($lastNewlinePos === false) {
-                // Ни одной полной строки ещё не накопилось — ждём следующий чанк.
-                return strlen($chunk);
-            }
-
-            $completeLines = substr($sseBuffer, 0, $lastNewlinePos);
-            $sseBuffer = substr($sseBuffer, $lastNewlinePos + 1); // остаток — в буфер
-
-            foreach (explode("\n", $completeLines) as $line) {
-                $line = trim($line);
-                if (strpos($line, "data:") !== 0) {
-                    continue;
-                }
-                $jsonStr = trim(substr($line, 5));
-                if ($jsonStr === "" || $jsonStr === "[DONE]") {
-                    continue;
-                }
-                $event = json_decode($jsonStr, true);
-                if (!is_array($event)) {
-                    continue;
-                }
-                if (($event["type"] ?? "") === "content_block_delta"
-                    && ($event["delta"]["type"] ?? "") === "text_delta") {
-                    $accumulatedText .= $event["delta"]["text"];
-                }
-                if (($event["type"] ?? "") === "error") {
-                    $streamError = $event["error"]["message"] ?? "unknown stream error";
-                }
-            }
-            return strlen($chunk);
-        },
-    ]);
-
-    $success = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-
-    $rawBodySnippet = trim(preg_replace('/\s+/', ' ', substr($rawBody, 0, 500)));
-
-    if ($curlError) {
-        return ["error" => "cURL error: " . $curlError];
+    // Сам запрос к router.cheap выполняется НЕ прямым curl_exec() в этом
+    // процессе, а в отдельном подпроцессе (call_api.php) через proc_open().
+    // Причина: curl_exec() внутри процесса с загруженным ядром Битрикса
+    // (этот скрипт стартует через prolog_before.php) периодически подвисает
+    // без ответа и без ошибки — тот же самый запрос с теми же заголовками,
+    // выполненный вне Битрикса (голым curl из шелла или из этого
+    // подпроцесса), отрабатывает нормально. call_api.php — лёгкий скрипт
+    // без prolog_before.php, воспроизводящий ту же SSE-логику стриминга
+    // (стриминг обязателен: без него шлюз router.cheap буферизует весь
+    // ответ и виснет на генерациях, требующих заметного времени).
+    $callApiScript = __DIR__ . "/call_api.php";
+    if (!file_exists($callApiScript)) {
+        return ["error" => "Не найден call_api.php рядом со скриптом (" . $callApiScript . ")"];
     }
 
-    if ($streamError) {
-        return ["error" => "API stream error: " . $streamError . ($rawBodySnippet !== "" ? " | тело: " . $rawBodySnippet : "")];
+    $descriptorSpec = [
+        0 => ["pipe", "r"], // STDIN подпроцесса — сюда пишем payload
+        1 => ["pipe", "w"], // STDOUT подпроцесса — отсюда читаем JSON-результат
+        2 => ["pipe", "w"], // STDERR подпроцесса — на всякий случай, в ошибку
+    ];
+    $phpBinary = PHP_BINARY ?: "php";
+    $cmd = escapeshellarg($phpBinary) . " " . escapeshellarg($callApiScript) . " " . escapeshellarg($url);
+    $env = $_ENV + ["ROUTER_CHEAP_API_KEY" => ROUTER_CHEAP_API_KEY];
+
+    $process = proc_open($cmd, $descriptorSpec, $pipes, __DIR__, $env);
+    if (!is_resource($process)) {
+        return ["error" => "Не удалось запустить подпроцесс call_api.php"];
     }
 
-    if ($httpCode !== 200) {
-        return ["error" => "API error ({$httpCode}), накоплено символов: " . strlen($accumulatedText) . ($rawBodySnippet !== "" ? " | тело: " . $rawBodySnippet : "")];
+    fwrite($pipes[0], $payload);
+    fclose($pipes[0]);
+
+    // Таймаут подпроцесса контролируется curl-таймаутом ВНУТРИ call_api.php
+    // (180 секунд) — здесь просто читаем до конца вывода и закрываем.
+    $stdout = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $stderrOutput = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+    $exitCode = proc_close($process);
+
+    $result = json_decode($stdout, true);
+    if (!is_array($result)) {
+        $stderrSnippet = trim(preg_replace('/\s+/', ' ', substr($stderrOutput, 0, 500)));
+        return ["error" => "Подпроцесс call_api.php вернул не-JSON (код выхода {$exitCode}): "
+            . trim(substr($stdout, 0, 500))
+            . ($stderrSnippet !== "" ? " | stderr: " . $stderrSnippet : "")];
     }
 
+    if (isset($result["error"])) {
+        return ["error" => $result["error"]];
+    }
+
+    $accumulatedText = $result["text"] ?? "";
     if (trim($accumulatedText) === "") {
         return ["error" => "Пустой ответ от API (стрим завершился без текста)"];
     }
