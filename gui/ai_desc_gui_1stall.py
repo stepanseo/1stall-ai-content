@@ -312,6 +312,9 @@ class App:
             command=lambda: self._open_ready_ids_window("smartfilter"),
         )
         self.smartfilter_ready_ids_btn.pack(side="left", padx=4)
+        ttk.Button(btn_frame4, text="По каким разделам работали",
+                   command=lambda: self._open_ready_ids_window("smartfilter_stats")).pack(side="left", padx=4)
+
 
         self.seo_edit_prompt_btn = ttk.Button(btn_frame4, text="Редактировать промпт", command=self._open_prompt_editor)
         self.seo_edit_prompt_btn.pack(side="left", padx=4)
@@ -1021,10 +1024,13 @@ class ReadyIdsWindow(tk.Toplevel):
         if kind == "products":
             self.title("Разделы с готовыми текстами товаров")
             label_text = "Все разделы с готовыми текстами товаров, отсортировано по возрастанию ID:"
+        elif kind == "smartfilter_stats":
+            self.title("Разделы умного фильтра — статистика по страницам")
+            label_text = "Количество текстов по отчётам: добавлено и готово к применению"
         else:
             self.title(f"SEO-страницы с готовым текстом — раздел {section}")
             label_text = f"Раздел {section}, отсортировано по алфавиту адреса:"
-        self.geometry("480x560")
+        self.geometry("1000x600")
 
         ttk.Label(self, text=label_text, foreground="#555555").pack(anchor="w", padx=10, pady=(10, 4))
 
@@ -1039,7 +1045,7 @@ class ReadyIdsWindow(tk.Toplevel):
         scrollbar.config(command=self.listbox.yview)
 
         self.status_var = tk.StringVar(value="Загружаю...")
-        ttk.Label(self, textvariable=self.status_var, foreground="blue").pack(anchor="w", padx=10, pady=(0, 10))
+        ttk.Label(self, textvariable=self.status_var, foreground="blue", wraplength=960).pack(anchor="w", padx=10, pady=(0, 10))
 
         self._load()
 
@@ -1054,12 +1060,10 @@ class ReadyIdsWindow(tk.Toplevel):
         thread.start()
 
     def _load_worker(self):
-        if self.kind == "products":
-            # Список разделов не привязан к конкретному "ID раздела" —
-            # сканирует все отчёты на сервере, аргумент не нужен.
-            cmd = f"cd {self.remote_path} && php ai_generate_descriptions.php listreadyids"
-        else:
-            cmd = f"cd {self.remote_path} && php ai_generate_descriptions.php listreadysmartfilterids {self.section}"
+        command = {"products": "listreadyids", "smartfilter_stats": "liststatssmartfilter"}.get(self.kind)
+        if command is None:
+            command = "listreadysmartfilterids " + shlex.quote(self.section)
+        cmd = f"cd {shlex.quote(self.remote_path)} && php ai_generate_descriptions.php {command}"
         client = None
         try:
             client = self._connect()
@@ -1068,6 +1072,11 @@ class ReadyIdsWindow(tk.Toplevel):
             result = out.read().decode("utf-8", errors="replace")
             err_text = err.read().decode("utf-8", errors="replace").strip()
 
+            # Bitrix diagnostic messages are not report warnings.
+            err_text = "\n".join(line for line in err_text.splitlines()
+                                 if not line.strip().startswith("[debug]"))
+            if "php ai_generate_descriptions.php review" in result or "Использование:" in result:
+                raise RuntimeError("PHP-скрипт не поддерживает команду отчёта. Замените ai_generate_descriptions.php в папке из настроек подключения.")
             lines = [line.strip() for line in result.splitlines() if line.strip()]
             # Первая строка от PHP — короткая сводка ("Раздел N: готовых
             # текстов — X"), остальные — уже готовые строки вида "ID - название".
@@ -1076,7 +1085,7 @@ class ReadyIdsWindow(tk.Toplevel):
 
             # Сортируем ещё раз и на стороне GUI (хотя PHP уже отсортировал) —
             # просто на случай, чтобы не зависеть от порядка вывода сервера.
-            if self.kind == "products":
+            if self.kind in ("products", "smartfilter_stats"):
                 def sort_key(line):
                     # Строка вида "384 - Лента бронзовая" — сортируем по
                     # числу перед " - ", а не по алфавиту всей строки.
