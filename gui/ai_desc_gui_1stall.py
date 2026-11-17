@@ -63,6 +63,8 @@ DEFAULT_CONFIG = {
     "remote_path": "/home/web/1stall.ru/www/local/scripts",
     "router_cheap_api_key": "",
     "router_cheap_model": "claude-sonnet-5",
+    "ai_agent": "claude",
+    "gpt_model": "",
 }
 
 
@@ -202,18 +204,29 @@ class App:
         self._add_copy_paste_menu(api_key_entry)
 
         self.balance_btn = ttk.Button(
-            conn_frame, text="Проверить баланс", command=self._check_router_balance
+            conn_frame, text="Проверить API", command=self._check_router_balance
         )
         self.balance_btn.grid(row=3, column=3, sticky="w", padx=4, pady=4)
 
         ttk.Label(conn_frame, text="Модель:").grid(row=4, column=0, sticky="e", padx=4, pady=4)
-        self.model_var = tk.StringVar(value=self.cfg["router_cheap_model"])
-        model_entry = ttk.Entry(conn_frame, textvariable=self.model_var, width=25)
+        self.agent_var = tk.StringVar(value=self.cfg.get("ai_agent", "claude"))
+        self._agent_models = {"claude": self.cfg["router_cheap_model"], "gpt": self.cfg.get("gpt_model", "")}
+        self._previous_agent = self.agent_var.get()
+        self.model_var = tk.StringVar(value=self._agent_models[self._previous_agent])
+        model_entry = ttk.Combobox(conn_frame, textvariable=self.model_var, width=30)
+        self.model_combo = model_entry
         model_entry.grid(row=4, column=1, sticky="w", padx=4, pady=4)
         self._add_copy_paste_menu(model_entry)
+        ttk.Label(conn_frame, text="Агент (router.cheap):").grid(row=5, column=0, sticky="e", padx=4, pady=4)
+        agent_combo = ttk.Combobox(conn_frame, textvariable=self.agent_var,
+                                   values=("gpt", "claude"), state="readonly", width=20)
+        agent_combo.grid(row=5, column=1, sticky="w", padx=4, pady=4)
+        agent_combo.bind("<<ComboboxSelected>>", self._agent_changed)
+        ttk.Button(conn_frame, text="Загрузить модели", command=self._load_models).grid(row=4, column=3, padx=4)
+
 
         ttk.Button(conn_frame, text="Сохранить настройки подключения", command=self._save_settings).grid(
-            row=5, column=0, columnspan=4, pady=6
+            row=7, column=0, columnspan=4, pady=6
         )
 
         run_frame = ttk.LabelFrame(self.root, text="Запуск генерации")
@@ -341,6 +354,49 @@ class App:
 
     # ---------------------------------------------------------- Настройки
 
+    def _agent_changed(self, event=None):
+        self._agent_models[self._previous_agent] = self.model_var.get().strip()
+        self._previous_agent = self.agent_var.get()
+        self.model_var.set(self._agent_models.get(self._previous_agent, ""))
+        self.model_combo.configure(values=())
+
+    def _api_env(self):
+        return " ".join((
+            "AI_AGENT=" + shlex.quote(self.agent_var.get()),
+            "ROUTER_CHEAP_API_KEY=" + shlex.quote(self.api_key_var.get().strip()),
+            "ROUTER_CHEAP_MODEL=" + shlex.quote(self.model_var.get().strip()),
+        )) + " "
+
+    def _load_models(self):
+        key = self.api_key_var.get().strip()
+        agent = self.agent_var.get()
+        if not key:
+            messagebox.showerror("Ошибка", "Укажите ключ router.cheap.")
+            return
+        threading.Thread(target=self._models_worker, args=(key, agent), daemon=True).start()
+
+    def _models_worker(self, key, agent):
+        try:
+            req = urllib.request.Request("https://router.cheap/v1/models",
+                                         headers={"Authorization": "Bearer " + key})
+            with urllib.request.urlopen(req, timeout=30) as response:
+                data = json.loads(response.read().decode("utf-8"))
+            models = sorted({item["id"] for item in data.get("data", [])
+                             if isinstance(item, dict) and isinstance(item.get("id"), str)
+                             and agent in item["id"].lower()})
+            self.root.after(0, lambda: self._show_models(agent, models))
+        except Exception as exc:
+            self.root.after(0, lambda error=str(exc): messagebox.showerror("Модели", error))
+
+    def _show_models(self, agent, models):
+        if self.agent_var.get() != agent:
+            return
+        self.model_combo.configure(values=models)
+        if not models:
+            messagebox.showinfo("Модели", "Модели этого агента не найдены. Укажите точный ID из кабинета вручную.")
+        else:
+            messagebox.showinfo("Модели", f"Загружено моделей: {len(models)}. Выберите модель в списке.")
+
     def _save_settings(self):
         try:
             port = int(self.port_var.get() or 22)
@@ -355,7 +411,9 @@ class App:
             "password": self.pass_var.get(),
             "remote_path": self.path_var.get().strip(),
             "router_cheap_api_key": self.api_key_var.get().strip(),
-            "router_cheap_model": self.model_var.get().strip(),
+            "ai_agent": self.agent_var.get(),
+            "router_cheap_model": (self.model_var.get().strip() if self.agent_var.get() == "claude" else self._agent_models["claude"]),
+            "gpt_model": (self.model_var.get().strip() if self.agent_var.get() == "gpt" else self._agent_models["gpt"]),
         }
         save_config(self.cfg)
         messagebox.showinfo(
@@ -448,7 +506,7 @@ class App:
             target=self._remote_job_worker,
             args=(
                 host, port, user, password, remote_path, job_type, section, inner_cmd,
-                self.api_key_var.get().strip(), self.model_var.get().strip(),
+                self.api_key_var.get().strip(), self.model_var.get().strip(), self.agent_var.get(),
             ),
             daemon=True,
         )
@@ -462,7 +520,7 @@ class App:
         client.get_transport().set_keepalive(30)
         return client
 
-    def _remote_job_worker(self, host, port, user, password, remote_path, job_type, section, inner_cmd, api_key="", model=""):
+    def _remote_job_worker(self, host, port, user, password, remote_path, job_type, section, inner_cmd, api_key="", model="", agent="claude"):
         log_name = f"gui_run_{job_type}_{section}.log"
         pid_name = f"gui_run_{job_type}_{section}.pid"
         log_path = f"{remote_path}/{log_name}"
@@ -473,7 +531,7 @@ class App:
         # корректную POSIX-shell-экранировку). PHP-скрипт читает их через
         # getenv(), если они заданы — иначе использует значения по умолчанию,
         # зашитые в самом файле на сервере.
-        env_parts = []
+        env_parts = ["AI_AGENT=" + shlex.quote(agent)]
         if api_key:
             env_parts.append(f"ROUTER_CHEAP_API_KEY={shlex.quote(api_key)}")
         if model:
@@ -707,6 +765,9 @@ class App:
     # ---------------------------------------------------------- Проверка баланса router.cheap
 
     def _check_router_balance(self):
+        if self.agent_var.get() == "gpt":
+            self._load_models()
+            return
         api_key = self.api_key_var.get().strip()
         if not api_key:
             messagebox.showerror("Ошибка", "Сначала укажи ключ API.")
@@ -778,7 +839,7 @@ class App:
         ))
 
     def _show_balance_result(self, text, is_error=False):
-        self.balance_btn.configure(state="normal", text="Проверить баланс")
+        self.balance_btn.configure(state="normal", text="Проверить API")
         if is_error:
             messagebox.showwarning("Результат проверки", text)
         else:
@@ -1839,11 +1900,11 @@ class PromptTesterWindow(tk.Toplevel):
                 safe_input = shlex.quote(value)
                 cmd = (
                     f"cd {self.remote_path} && "
-                    f"ROUTER_CHEAP_API_KEY={shlex.quote(api_key)} ROUTER_CHEAP_MODEL={shlex.quote(model)} "
+                    f"{self.app._api_env()}"
                     f"php ai_generate_descriptions.php {cmd_name} {safe_input} prompt_test_temp.txt"
                 )
                 try:
-                    _, out, err = client.exec_command(cmd, timeout=180)
+                    _, out, err = client.exec_command(cmd, timeout=1200)
                     out.channel.recv_exit_status()
                     result_text = out.read().decode("utf-8", errors="replace")
                     err_text = err.read().decode("utf-8", errors="replace").strip()
@@ -1948,10 +2009,10 @@ class PromptTesterWindow(tk.Toplevel):
 
             cmd = (
                 f"cd {self.remote_path} && "
-                f"ROUTER_CHEAP_API_KEY={shlex.quote(api_key)} ROUTER_CHEAP_MODEL={shlex.quote(model)} "
+                f"{self.app._api_env()}"
                 f"php ai_generate_descriptions.php rawapicall prompt_critique_temp.txt"
             )
-            _, out, err = client.exec_command(cmd, timeout=180)
+            _, out, err = client.exec_command(cmd, timeout=1200)
             out.channel.recv_exit_status()
             raw_response = out.read().decode("utf-8", errors="replace")
             err_text = err.read().decode("utf-8", errors="replace").strip()
